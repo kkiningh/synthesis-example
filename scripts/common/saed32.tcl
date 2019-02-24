@@ -1,5 +1,6 @@
 # SAED32/28 setup script
 # Note: This is intended to be compatible with the Synopsys Reference Methodology flow
+puts "Info: Running script [info script]"
 puts "Info: Using Synopsys EDK Gate Libraries (6M, 32nm)"
 
 # Set the SAED EDK32 path
@@ -152,3 +153,5 @@ set MAX_ROUTING_LAYER "M8"
 set LIBRARY_DONT_USE_FILE                   "scripts/common/dont_use.tcl"
 set LIBRARY_DONT_USE_PRE_COMPILE_LIST       ""
 set LIBRARY_DONT_USE_PRE_INCR_COMPILE_LIST  ""
+
+puts "Info: Completed script [info script]"

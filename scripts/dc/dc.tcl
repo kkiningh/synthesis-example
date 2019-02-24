@@ -3,10 +3,17 @@ source "scripts/dc/dc_setup.tcl"
 # Enable support for via RC estimation
 set_app_var spg_enable_via_resistance_support true
 
+# If we have a pre-compile don't use list, source it here
 if {[file exists [which ${LIBRARY_DONT_USE_PRE_COMPILE_LIST}]]} {
   puts "RM-Info: Sourcing script file [which ${LIBRARY_DONT_USE_PRE_COMPILE_LIST}]\n"
   source -echo -verbose $LIBRARY_DONT_USE_PRE_COMPILE_LIST
 }
+
+###############################################################################
+# Setup Formality Verification
+###############################################################################
+# Define the verification setup file for Formality
+set_svf ${RESULTS_DIR}/${SVF_OUTPUT_FILE}
 
 ###############################################################################
 # Setup SAIF Name Mapping Database
@@ -22,10 +29,16 @@ saif_map -start
 # Define the folder to use for temporary files
 define_design_lib WORK -path ./WORK
 
+# Helps verification resolve differences between DC and FM
+set_app_var hdlin_enable_hier_map true
+
 # Acutually read in the verilog
 analyze -format sverilog ${RTL_SOURCE_FILES}
 elaborate ${DESIGN_NAME}
 current_design ${DESIGN_NAME}
+
+# Set the verification top level
+set_verification_top
 
 # Write out the fully elaborated design
 write -hierarchy -format ddc -output ${RESULTS_DIR}/${ELABORATED_DESIGN_DDC_OUTPUT_FILE}
@@ -168,6 +181,40 @@ set_svf -off
 ###############################################################################
 # Write out extra design data
 ###############################################################################
+# Note: A secondary floorplan file $DCT_FINAL_FLOORPLAN_OUTPUT_FILE}.objects
+# might also be written to capture physical-only objects in the design.
+# This file should be read in before reading the main floorplan file.
+write_floorplan -all ${RESULTS_DIR}/${DCT_FINAL_FLOORPLAN_OUTPUT_FILE}
+
+# Do not write out net RC info into SDC
+set_app_var write_sdc_output_lumped_net_capacitance false
+set_app_var write_sdc_output_net_resistance false
+
+# Note: if you have more than one senario, loop over them here
+# set all_active_scenario_saved [all_active_scenarios]
+# set current_scenario_saved [current_scenario]
+# set_active_scenarios -all
+# foreach scenario [all_active_scenarios] {
+#   current_scenario ${scenario}
+#   write_parasitics
+#   write_sdf
+#   write_sdc
+#}
+# current_scenario ${current_scenario_saved}
+# set_active_scenarios ${all_active_scenario_saved}
+
+# Write parasitics data from Design Compiler Topographical placement for
+# static timing analysis
+write_parasitics -output ${RESULTS_DIR}/${DCT_FINAL_SPEF_OUTPUT_FILE}
+
+# Write SDF backannotation data from Design Compiler Topographical placement
+# for static timing analysis
+write_sdf ${RESULTS_DIR}/${DCT_FINAL_SDF_OUTPUT_FILE}
+
+# Write timing constraints
+write_sdc -nosplit ${RESULTS_DIR}/${FINAL_SDC_OUTPUT_FILE}
+
+# Write the map between pre and post sythesis names for timing analysis
 saif_map -type ptpx -write_map ${RESULTS_DIR}/${DESIGN_NAME}.mapped.SAIF.namemap
 
 ###############################################################################
@@ -184,6 +231,16 @@ report_area -designware  > ${REPORTS_DIR}/${FINAL_DESIGNWARE_AREA_REPORT}
 report_resources -hierarchy > ${REPORTS_DIR}/${FINAL_RESOURCES_REPORT}
 
 # Power
+# Use SAIF file for power analysis
+# set current_scenario_saved [current_scenario]
+# foreach scenario [all_active_scenarios] {
+#   current_scenario ${scenario}
+#   read_saif -auto_map_names -input ${DESIGN_NAME}.${scenario}.saif -instance < DESIGN_INSTANCE > -verbose
+# }
+# current_scenario ${current_scenario_saved}
 report_power -nosplit > ${REPORTS_DIR}/${FINAL_POWER_REPORT}
 report_clock_gating -nosplit > ${REPORTS_DIR}/${FINAL_CLOCK_GATING_REPORT}
 report_threshold_voltage_group -nosplit > ${REPORTS_DIR}/${THRESHOLD_VOLTAGE_GROUP_REPORT}
+
+# Congestion
+report_congestion > ${REPORTS_DIR}/${DCT_FINAL_CONGESTION_REPORT}

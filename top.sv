@@ -12,7 +12,7 @@ module regfile (
   input  logic [ 7:0] r_addr,
   output logic [15:0] r_data
 );
-  logic [7:0][3:0] memory;
+  logic [255:0][15:0] memory;
   always_ff @(posedge clock or negedge reset_n) begin
     if (~reset_n) begin
       memory <= 'b0;

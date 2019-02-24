@@ -1,3 +1,5 @@
+*.syn
+*.mr
 *.log
 WORK/
 alib-*/

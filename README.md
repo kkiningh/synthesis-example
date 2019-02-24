@@ -1,4 +1,4 @@
-Sythesis example
+Synthesis example
 ---
 
 To run:

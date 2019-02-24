@@ -1,5 +1,6 @@
-alib-*/
-top_LIB/
-command.log
+*.log
 WORK/
+alib-*/
+command.log
 default.svf
+top_LIB/
